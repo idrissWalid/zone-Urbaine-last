@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Visualisation des Votes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col items-center py-10">
+  <h1 class="text-3xl font-bold mb-8">Visualisation des Votes</h1>
+  
+  <div class="w-full max-w-2xl bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+    <canvas id="voteChart"></canvas>
+  </div>
+
+  <p class="mb-2">Total Votes : <span id="total-votes">0</span></p>
+  <p id="cand1">PNJ : 0 votes (0%)</p>
+  <p id="cand2">IKSS : 0 votes (0%)</p>
+  <p id="cand3">Bremzo : 0 votes (0%)</p>
+  <p id="cand4">RCD : 0 votes (0%)</p>
+  <p id="cand5">MeddyBest : 0 votes (0%)</p>
+
+  <div class="my-6 flex gap-4">
+    <button id="refreshBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+      Actualiser
+    </button>
+    <button id="resetBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+      Réinitialiser les votes
+    </button>
+  </div>
+
+  <script>
+    let voteChart;
+
+    async function fetchVotes() {
+      const res = await fetch('/api/admin/votes', { method: 'GET' });
+      return res.json();
+    }
+
+    async function updateChart() {
+      const data = await fetchVotes();
+      if (!data.success) {
+        alert("Impossible de récupérer les votes.");
+        return;
+      }
+      const votes = data.votes;
+      const chartData = [
+        votes.Candidat1 || 0,
+        votes.Candidat2 || 0,
+        votes.Candidat3 || 0,
+        votes.Candidat4 || 0,
+        votes.Candidat5 || 0
+      ];
+
+      if (!voteChart) {
+        const ctx = document.getElementById('voteChart').getContext('2d');
+        const images = ['pjn.jpg','ikss.jpg','bremzo.jpg','rcd.jpg','meddybest.jpg'].map(src => {
+          const img = new Image();
+          img.src = src;
+          return img;
+        });
+
+        const imagePlugin = {
+          afterDatasetsDraw(chart) {
+            const {ctx, scales: {x, y}} = chart;
+            chart.data.datasets[0].data.forEach((value, i) => {
+              const xPos = x.getPixelForValue(i);
+              const yPos = y.getPixelForValue(value) - 40;
+              ctx.save();
+              ctx.beginPath();
+              ctx.arc(xPos, yPos + 20, 20, 0, 2 * Math.PI);
+              ctx.closePath();
+              ctx.clip();
+              ctx.drawImage(images[i], xPos - 20, yPos, 40, 40);
+              ctx.restore();
+            });
+          }
+        };
+
+        voteChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['PNJ', 'IKSS', 'Bremzo', 'RCD', 'MeddyBest'],
+            datasets: [{
+              label: 'Nombre de votes',
+              data: chartData,
+              backgroundColor: ['#FBBF24','#EF4444','#FFFFFF','#22C55E','#8B5CF6'],
+              borderColor: '#222',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: { beginAtZero: true, ticks: { color: '#fff' }},
+              x: { ticks: { color: '#fff' }}
+            },
+            plugins: {
+              legend: { labels: { color: '#fff' } }
+            }
+          },
+          plugins: [imagePlugin]
+        });
+      } else {
+        voteChart.data.datasets[0].data = chartData;
+        voteChart.update();
+      }
+
+      const totalVotes = chartData.reduce((a, b) => a + b, 0);
+      document.getElementById('total-votes').innerText = totalVotes;
+      document.getElementById('cand1').innerText = `PNJ : ${votes.Candidat1 || 0} votes (${totalVotes ? ((votes.Candidat1 || 0)/totalVotes*100).toFixed(2):0}%)`;
+      document.getElementById('cand2').innerText = `IKSS : ${votes.Candidat2 || 0} votes (${totalVotes ? ((votes.Candidat2 || 0)/totalVotes*100).toFixed(2):0}%)`;
+      document.getElementById('cand3').innerText = `Bremzo : ${votes.Candidat3 || 0} votes (${totalVotes ? ((votes.Candidat3 || 0)/totalVotes*100).toFixed(2):0}%)`;
+      document.getElementById('cand4').innerText = `RCD : ${votes.Candidat4 || 0} votes (${totalVotes ? ((votes.Candidat4 || 0)/totalVotes*100).toFixed(2):0}%)`;
+      document.getElementById('cand5').innerText = `MeddyBest : ${votes.Candidat5 || 0} votes (${totalVotes ? ((votes.Candidat5 || 0)/totalVotes*100).toFixed(2):0}%)`;
+    }
+
+    document.getElementById('refreshBtn').onclick = updateChart;
+
+    document.getElementById('resetBtn').onclick = async function() {
+      const pw = prompt("Mot de passe admin :");
+      if (!pw) return;
+      const res = await fetch('/api/admin/reset_votes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("Votes réinitialisés !");
+        updateChart();
+      } else {
+        alert("Mot de passe incorrect ou erreur !");
+      }
+    };
+
+    window.onload = updateChart;
+  </script>
+</body>
+</html>

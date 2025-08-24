@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Voter</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-image: url('affiche.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+  </style>
+</head>
+<body class="text-gray-100 min-h-screen flex flex-col items-center py-10 bg-gray-900/50">
+  <h1 class="text-3xl font-bold mb-6">Page de paiement pour IKSS</h1>
+
+  <div class="bg-gray-800 bg-opacity-80 p-6 rounded-lg shadow-lg w-full max-w-md">
+    <label for="phone" class="block mb-2">Numéro Orange Money :</label>
+    <input id="phone" type="text" placeholder="Ex: 07000000" maxlength="8"
+           class="w-full mb-4 p-2 rounded text-black" />
+
+    <!-- Bouton paiement -->
+    <button id="payBtn" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded w-full mb-4">
+      Effectuer un paiement
+    </button>
+
+    <!-- Bouton voter / vérifier -->
+    <button id="voteBtn" disabled class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full flex justify-center items-center">
+      <span id="btnText">Vérifier et Voter</span>
+      <svg id="loader" class="animate-spin h-5 w-5 ml-2 hidden text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+      </svg>
+    </button>
+
+    <p id="result" class="mt-4 text-center font-semibold"></p>
+  </div>
+
+  <script>
+    const API_URL = "http://localhost:10000"; // Remplace par ton URL Render
+
+    const payBtn = document.getElementById("payBtn");
+    const voteBtn = document.getElementById("voteBtn");
+    const resultEl = document.getElementById("result");
+    const loader = document.getElementById("loader");
+    const btnText = document.getElementById("btnText");
+    const phoneInput = document.getElementById("phone");
+
+    let paiementEffectue = false;
+
+    // Limiter la saisie à des chiffres seulement
+    phoneInput.addEventListener("input", () => {
+      phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 8);
+    });
+
+    // Paiement USSD
+    payBtn.addEventListener("click", () => {
+      const ussdCode = "*144*2*1*55713380*100%23";
+      window.location.href = `tel:${encodeURIComponent(ussdCode)}`;
+
+      paiementEffectue = true;
+      voteBtn.disabled = false;
+
+      resultEl.textContent = "Paiement effectué, vous pouvez maintenant voter.";
+      resultEl.classList.remove("text-red-500");
+      resultEl.classList.add("text-green-500");
+    });
+
+    voteBtn.addEventListener("click", async () => {
+      if (!paiementEffectue) {
+        resultEl.textContent = "Vous devez effectuer le paiement avant de voter.";
+        resultEl.classList.add("text-red-500");
+        return;
+      }
+
+      const phone = phoneInput.value.trim();
+      if (phone.length !== 8) {
+        resultEl.textContent = "Le numéro doit contenir exactement 8 chiffres.";
+        resultEl.classList.add("text-red-500");
+        return;
+      }
+
+      loader.classList.remove("hidden");
+      btnText.textContent = "Vérification...";
+
+      try {
+        const res = await fetch(`${API_URL}/api/vote`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone, candidate: "Candidat2" })
+        });
+        const data = await res.json();
+
+        loader.classList.add("hidden");
+        btnText.textContent = "Vérifier et Voter";
+
+        if (data.success) {
+          resultEl.textContent = data.message;
+          resultEl.classList.remove("text-red-500");
+          resultEl.classList.add("text-green-500");
+
+          // Redirection après 1 seconde
+          setTimeout(() => {
+            window.location.href = "index.html";
+          }, 1000);
+        } else {
+          resultEl.textContent = data.error || "Erreur lors du vote.";
+          resultEl.classList.remove("text-green-500");
+          resultEl.classList.add("text-red-500");
+        }
+      } catch (err) {
+        loader.classList.add("hidden");
+        btnText.textContent = "Vérifier et Voter";
+        resultEl.textContent = "Erreur de connexion au serveur.";
+        resultEl.classList.remove("text-green-500");
+        resultEl.classList.add("text-red-500");
+      }
+    });
+  </script>
+</body>
+</html>
