@@ -58,7 +58,7 @@
 
     // Paiement USSD
     payBtn.addEventListener("click", () => {
-      const ussdCode = "*144*2*1*55713380*100%23";
+      const ussdCode = "*144*2*1*55713380*100#";
       window.location.href = `tel:${encodeURIComponent(ussdCode)}`;
 
       paiementEffectue = true;
@@ -122,5 +122,6 @@
   </script>
 </body>
 </html>
+
 
 
