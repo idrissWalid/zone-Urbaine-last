@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
-      background-image: url('affiche.jpg');
+      background-image: url('bg.jpg');
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
@@ -24,7 +24,7 @@
 
     <!-- Bouton paiement -->
     <button id="payBtn" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded w-full mb-4">
-      Effectuer un paiement
+      Effectuer un paiement(100F)
     </button>
 
     <!-- Bouton voter / vérifier -->
@@ -40,7 +40,7 @@
   </div>
 
   <script>
-    const API_URL = "http://localhost:10000"; // Remplace par ton URL Render
+    const API_URL = "https://zone-urbaine-vote.onrender.com"; // Remplace par ton URL Render
 
     const payBtn = document.getElementById("payBtn");
     const voteBtn = document.getElementById("voteBtn");
@@ -58,7 +58,7 @@
 
     // Paiement USSD
     payBtn.addEventListener("click", () => {
-      const ussdCode = "*144*2*1*55713380*100%23";
+      const ussdCode = "*144*2*1*55713380*100#";
       window.location.href = `tel:${encodeURIComponent(ussdCode)}`;
 
       paiementEffectue = true;
@@ -122,3 +122,4 @@
   </script>
 </body>
 </html>
+
