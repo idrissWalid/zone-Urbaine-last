@@ -46,8 +46,27 @@ def get_votes_count():
         "Candidat4": result.get("Candidat4", 0),
         "Candidat5": result.get("Candidat5", 0)
     }
+def extract_phone(text):
+    """
+    Extrait le numéro à 8 chiffres après 'du' dans le texte.
+    """
+    # Cherche la position de "du "
+    start = text.find("du ")
+    if start == -1:
+        return None
+    start += 3  # on se place après "du "
+    
+    # On prend les 8 caractères suivants (le numéro)
+    phone = text[start:start+8]
+    
+    # Vérifie que ce sont bien des chiffres
+    if phone.isdigit() and len(phone) == 8:
+        return phone
+    return None
+
 
 def add_payment(phone, votes):
+    phone = extract_phone(phone)
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     # Si le numéro existe déjà, on incrémente
@@ -134,3 +153,4 @@ def static_files(path):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
