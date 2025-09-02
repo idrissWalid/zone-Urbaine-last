@@ -8,7 +8,7 @@ app = Flask(__name__)
 CORS(app)
 
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "change-moi-en-prod")
-DB_URL = os.environ.get("DATABASE_URL")
+DB_URL = os.environ.get("DATABASE_URL")  # fournie par Render
 
 def get_conn():
     return psycopg2.connect(DB_URL, sslmode="require")
@@ -45,90 +45,53 @@ def extract_phone(text):
     return None
 
 # --- GESTION DES VOTES ---
-def add_or_increment_vote(phone, votes=1):
+def add_vote(phone, candidate, votes=1):
     conn = get_conn()
     c = conn.cursor()
+    # Vérifie si le téléphone a des votes disponibles
     c.execute("SELECT remaining_votes FROM payments WHERE phone=%s", (phone,))
     row = c.fetchone()
-    if row:
-        new_votes = row[0] + votes
-        c.execute("UPDATE payments SET remaining_votes=%s WHERE phone=%s", (new_votes, phone))
-    else:
-        c.execute("INSERT INTO payments (phone, remaining_votes) VALUES (%s, %s)", (phone, votes))
-    conn.commit()
+    if row and row[0] >= votes:
+        # Ajoute le vote(s)
+        for _ in range(votes):
+            c.execute("INSERT INTO votes (candidate, phone) VALUES (%s, %s)", (candidate, phone))
+        # Décrémente les votes disponibles
+        c.execute("UPDATE payments SET remaining_votes = remaining_votes - %s WHERE phone=%s", (votes, phone))
+        conn.commit()
+        conn.close()
+        return True
     conn.close()
+    return False
 
-# --- ROUTE SMS ---
-@app.route("/api/sms", methods=["POST"])
-def api_sms():
-    data = request.get_json()
-    sms_text = data.get("message")
-    if not sms_text:
-        return jsonify({"success": False, "error": "Message vide"}), 400
+# --- ROUTES PUBLIQUES ---
 
-    phone = extract_phone(sms_text)
-    if not phone:
-        return jsonify({"success": False, "error": "Aucun numéro trouvé"}), 400
-
-    add_or_increment_vote(phone)
-    return jsonify({"success": True, "message": f"1 vote ajouté pour {phone}"}), 201
-
-# --- ROUTE PAYMENTS (vote sans candidat) ---
-@app.route("/api/payments", methods=["POST"])
-def api_payments():
-    data = request.get_json()
-    phone = data.get("phone")
-    votes = data.get("votes", 1)
-
-    if not phone or not phone.isdigit() or len(phone) != 8:
-        return jsonify({"success": False, "error": "Numéro de téléphone invalide"}), 400
-    if not isinstance(votes, int) or votes < 1:
-        return jsonify({"success": False, "error": "Nombre de votes invalide"}), 400
-
-    add_or_increment_vote(phone, votes)
-    return jsonify({"success": True, "message": f"{votes} vote(s) ajouté(s) pour {phone}"}), 201
-
-# --- ROUTE VOTE (pour candidat spécifique) ---
 @app.route("/api/vote", methods=["POST"])
 def api_vote():
     data = request.get_json()
     phone = data.get("phone")
     candidate = data.get("candidate")
-    votes = data.get("votes", 1)
+    votes = int(data.get("votes", 1))
 
-    if not phone or not phone.isdigit() or len(phone) != 8:
-        return jsonify({"success": False, "error": "Numéro de téléphone invalide"}), 400
+    if not phone or len(phone) != 8:
+        return jsonify({"success": False, "error": "Numéro invalide"}), 400
     if not candidate:
         return jsonify({"success": False, "error": "Candidat non spécifié"}), 400
-    if not isinstance(votes, int) or votes < 1:
-        return jsonify({"success": False, "error": "Nombre de votes invalide"}), 400
 
-    conn = get_conn()
-    c = conn.cursor()
-    # Enregistrer le vote dans votes
-    c.execute("INSERT INTO votes (phone, candidate) VALUES (%s, %s)", (phone, candidate))
-    # Incrémenter remaining_votes dans payments
-    c.execute("SELECT remaining_votes FROM payments WHERE phone=%s", (phone,))
-    row = c.fetchone()
-    if row:
-        new_votes = row[0] + votes
-        c.execute("UPDATE payments SET remaining_votes=%s WHERE phone=%s", (new_votes, phone))
+    if add_vote(phone, candidate, votes):
+        return jsonify({"success": True, "message": f"{votes} vote(s) ajouté(s) pour {candidate}"}), 201
     else:
-        c.execute("INSERT INTO payments (phone, remaining_votes) VALUES (%s, %s)", (phone, votes))
-    conn.commit()
-    conn.close()
+        return jsonify({"success": False, "error": "Pas assez de votes disponibles pour ce numéro"}), 400
 
-    return jsonify({"success": True, "message": f"{votes} vote(s) ajouté(s) pour {candidate} par {phone}"}), 201
+# --- ROUTES ADMIN ---
 
-# --- ADMIN ---
-@app.route("/api/admin/votes", methods=["GET"])
-def admin_votes():
+@app.route("/api/admin/votes_by_candidate", methods=["GET"])
+def admin_votes_by_candidate():
     conn = get_conn()
     c = conn.cursor()
-    c.execute("SELECT phone, remaining_votes FROM payments ORDER BY remaining_votes DESC;")
+    c.execute("SELECT candidate, COUNT(*) FROM votes GROUP BY candidate")
     rows = c.fetchall()
     conn.close()
-    results = [{"phone": r[0], "votes": r[1]} for r in rows]
+    results = {row[0]: row[1] for row in rows}
     return jsonify({"success": True, "votes": results})
 
 @app.route("/api/admin/reset_votes", methods=["POST"])
@@ -145,6 +108,7 @@ def admin_reset_votes():
     return jsonify({"success": True, "message": "Votes réinitialisés"})
 
 # --- SERVIR LES FICHIERS STATIQUES ---
+
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
@@ -153,6 +117,7 @@ def index():
 def static_files(path):
     return send_from_directory(".", path)
 
+# --- MAIN ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port, debug=True)
