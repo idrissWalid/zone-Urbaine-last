@@ -34,7 +34,7 @@
     let voteChart;
 
     async function fetchVotes() {
-      const res = await fetch('/api/admin/votes', { method: 'GET' });
+      const res = await fetch('/api/admin/votes_by_candidate', { method: 'GET' });
       return res.json();
     }
 
@@ -45,17 +45,20 @@
         return;
       }
       const votes = data.votes;
+
       const chartData = [
-        votes.Candidat1 || 0,
-        votes.Candidat2 || 0,
-        votes.Candidat3 || 0,
-        votes.Candidat4 || 0,
-        votes.Candidat5 || 0
+        votes.PGN || 0,
+        votes.IKSS || 0,
+        votes.Bremzo || 0,
+        votes.RCD || 0,
+        votes.MeddyBest || 0
       ];
+
+      const totalVotes = chartData.reduce((a, b) => a + b, 0);
 
       if (!voteChart) {
         const ctx = document.getElementById('voteChart').getContext('2d');
-        const images = ['pjn.jpg','ikss.jpg','bremzo.jpg','rcd.jpg','meddybest.jpg'].map(src => {
+        const images = ['pgn.jpg','ikss.jpg','bremzo.jpg','rcd.jpg','meddybest.jpg'].map(src => {
           const img = new Image();
           img.src = src;
           return img;
@@ -81,7 +84,7 @@
         voteChart = new Chart(ctx, {
           type: 'bar',
           data: {
-            labels: ['PNJ', 'IKSS', 'Bremzo', 'RCD', 'MeddyBest'],
+            labels: ['PGN', 'IKSS', 'Bremzo', 'RCD', 'MeddyBest'],
             datasets: [{
               label: 'Nombre de votes',
               data: chartData,
@@ -107,13 +110,12 @@
         voteChart.update();
       }
 
-      const totalVotes = chartData.reduce((a, b) => a + b, 0);
       document.getElementById('total-votes').innerText = totalVotes;
-      document.getElementById('cand1').innerText = `PGN : ${votes.Candidat1 || 0} votes (${totalVotes ? ((votes.Candidat1 || 0)/totalVotes*100).toFixed(2):0}%)`;
-      document.getElementById('cand2').innerText = `IKSS : ${votes.Candidat2 || 0} votes (${totalVotes ? ((votes.Candidat2 || 0)/totalVotes*100).toFixed(2):0}%)`;
-      document.getElementById('cand3').innerText = `Bremzo : ${votes.Candidat3 || 0} votes (${totalVotes ? ((votes.Candidat3 || 0)/totalVotes*100).toFixed(2):0}%)`;
-      document.getElementById('cand4').innerText = `RCD : ${votes.Candidat4 || 0} votes (${totalVotes ? ((votes.Candidat4 || 0)/totalVotes*100).toFixed(2):0}%)`;
-      document.getElementById('cand5').innerText = `MeddyBest : ${votes.Candidat5 || 0} votes (${totalVotes ? ((votes.Candidat5 || 0)/totalVotes*100).toFixed(2):0}%)`;
+      document.getElementById('cand1').innerText = `PGN : ${votes.PGN || 0} votes (${totalVotes ? ((votes.PGN || 0)/totalVotes*100).toFixed(2):0}%)`;
+      document.getElementById('cand2').innerText = `IKSS : ${votes.IKSS || 0} votes (${totalVotes ? ((votes.IKSS || 0)/totalVotes*100).toFixed(2):0}%)`;
+      document.getElementById('cand3').innerText = `Bremzo : ${votes.Bremzo || 0} votes (${totalVotes ? ((votes.Bremzo || 0)/totalVotes*100).toFixed(2):0}%)`;
+      document.getElementById('cand4').innerText = `RCD : ${votes.RCD || 0} votes (${totalVotes ? ((votes.RCD || 0)/totalVotes*100).toFixed(2):0}%)`;
+      document.getElementById('cand5').innerText = `MeddyBest : ${votes.MeddyBest || 0} votes (${totalVotes ? ((votes.MeddyBest || 0)/totalVotes*100).toFixed(2):0}%)`;
     }
 
     document.getElementById('refreshBtn').onclick = updateChart;
@@ -139,4 +141,3 @@
   </script>
 </body>
 </html>
-
