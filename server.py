@@ -39,37 +39,29 @@ init_db()
 
 # --- EXTRACTION DU NUMERO ---
 def extract_phone(text):
-    """
-    Cherche un numéro de 8 chiffres dans le SMS.
-    Exemple: "Vous avez recu 1000F de 78123456"
-    """
     match = re.search(r"\b(\d{8})\b", text)
     if match:
         return match.group(1)
     return None
 
 # --- GESTION DES VOTES ---
-def add_or_increment_vote(phone):
+def add_or_increment_vote(phone, votes=1):
     conn = get_conn()
     c = conn.cursor()
-    # si numéro existe déjà → incrémente remaining_votes
+    # Vérifie si le numéro existe déjà
     c.execute("SELECT remaining_votes FROM payments WHERE phone=%s", (phone,))
     row = c.fetchone()
     if row:
-        new_votes = row[0] + 1
+        new_votes = row[0] + votes
         c.execute("UPDATE payments SET remaining_votes=%s WHERE phone=%s", (new_votes, phone))
     else:
-        c.execute("INSERT INTO payments (phone, remaining_votes) VALUES (%s, %s)", (phone, 1))
+        c.execute("INSERT INTO payments (phone, remaining_votes) VALUES (%s, %s)", (phone, votes))
     conn.commit()
     conn.close()
 
-# --- ROUTE PRINCIPALE POUR SMS ---
+# --- ROUTE POUR SMS BRUT ---
 @app.route("/api/sms", methods=["POST"])
 def api_sms():
-    """
-    Reçoit le SMS brut (Forward SMS envoie { "message": "..." }).
-    On extrait le numéro et on ajoute un vote.
-    """
     data = request.get_json()
     sms_text = data.get("message")
     if not sms_text:
@@ -80,8 +72,22 @@ def api_sms():
         return jsonify({"success": False, "error": "Aucun numéro trouvé"}), 400
 
     add_or_increment_vote(phone)
-
     return jsonify({"success": True, "message": f"1 vote ajouté pour {phone}"}), 201
+
+# --- NOUVELLE ROUTE POUR VOTES DIRECTS ---
+@app.route("/api/payments", methods=["POST"])
+def api_payments():
+    data = request.get_json()
+    phone = data.get("phone")
+    votes = data.get("votes", 1)
+
+    if not phone or not phone.isdigit() or len(phone) != 8:
+        return jsonify({"success": False, "error": "Numéro de téléphone invalide"}), 400
+    if not isinstance(votes, int) or votes < 1:
+        return jsonify({"success": False, "error": "Nombre de votes invalide"}), 400
+
+    add_or_increment_vote(phone, votes)
+    return jsonify({"success": True, "message": f"{votes} vote(s) ajouté(s) pour {phone}"}), 201
 
 # --- ADMIN ---
 @app.route("/api/admin/votes", methods=["GET"])
