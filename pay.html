@@ -40,88 +40,93 @@
   </div>
 
   <script>
-    const API_URL = "https://zone-urbaine-vote.onrender.com"; // Remplace par ton URL Render
+  const API_URL = "https://zone-urbaine-vote.onrender.com"; // Ton URL Render
 
-    const payBtn = document.getElementById("payBtn");
-    const voteBtn = document.getElementById("voteBtn");
-    const resultEl = document.getElementById("result");
-    const loader = document.getElementById("loader");
-    const btnText = document.getElementById("btnText");
-    const phoneInput = document.getElementById("phone");
+  const payBtn = document.getElementById("payBtn");
+  const voteBtn = document.getElementById("voteBtn");
+  const resultEl = document.getElementById("result");
+  const loader = document.getElementById("loader");
+  const btnText = document.getElementById("btnText");
+  const phoneInput = document.getElementById("phone");
 
-    let paiementEffectue = false;
+  let paiementEffectue = false;
 
-    // Limiter la saisie à des chiffres seulement
-    phoneInput.addEventListener("input", () => {
-      phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 8);
-    });
+  // Limiter la saisie à des chiffres seulement
+  phoneInput.addEventListener("input", () => {
+    phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 8);
+  });
 
-    // Paiement USSD
-    payBtn.addEventListener("click", () => {
-      const ussdCode = "*144*2*1*55713380*100#";
-      window.location.href = `tel:${encodeURIComponent(ussdCode)}`;
+  // Paiement USSD
+  payBtn.addEventListener("click", () => {
+    const ussdCode = "*144*2*1*55713380*100#"; // exemple, adapte ton code
+    window.location.href = `tel:${encodeURIComponent(ussdCode)}`;
 
-      paiementEffectue = true;
-      voteBtn.disabled = false;
+    paiementEffectue = true;
+    voteBtn.disabled = false;
 
-      resultEl.textContent = "Paiement effectué, vous pouvez maintenant voter.";
-      resultEl.classList.remove("text-red-500");
-      resultEl.classList.add("text-green-500");
-    });
+    resultEl.textContent = "Paiement effectué, vous pouvez maintenant voter.";
+    resultEl.classList.remove("text-red-500");
+    resultEl.classList.add("text-green-500");
+  });
 
-    voteBtn.addEventListener("click", async () => {
-      if (!paiementEffectue) {
-        resultEl.textContent = "Vous devez effectuer le paiement avant de voter.";
-        resultEl.classList.add("text-red-500");
-        return;
-      }
+  // Voter
+  voteBtn.addEventListener("click", async () => {
+    if (!paiementEffectue) {
+      resultEl.textContent = "Vous devez effectuer le paiement avant de voter.";
+      resultEl.classList.add("text-red-500");
+      return;
+    }
 
-      const phone = phoneInput.value.trim();
-      if (phone.length !== 8) {
-        resultEl.textContent = "Le numéro doit contenir exactement 8 chiffres.";
-        resultEl.classList.add("text-red-500");
-        return;
-      }
+    const phone = phoneInput.value.trim();
+    if (phone.length !== 8) {
+      resultEl.textContent = "Le numéro doit contenir exactement 8 chiffres.";
+      resultEl.classList.add("text-red-500");
+      return;
+    }
 
-      loader.classList.remove("hidden");
-      btnText.textContent = "Vérification...";
+    loader.classList.remove("hidden");
+    btnText.textContent = "Vérification...";
 
-      try {
-        const res = await fetch(`${API_URL}/api/vote`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone, candidate: "Candidat1" })
-        });
-        const data = await res.json();
+    try {
+      // Envoi directement à /api/payments avec votes=1
+      const res = await fetch(`${API_URL}/api/payments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: phone, votes: 1 })
+      });
 
-        loader.classList.add("hidden");
-        btnText.textContent = "Vérifier et Voter";
+      const data = await res.json();
 
-        if (data.success) {
-          resultEl.textContent = data.message;
-          resultEl.classList.remove("text-red-500");
-          resultEl.classList.add("text-green-500");
+      loader.classList.add("hidden");
+      btnText.textContent = "Vérifier et Voter";
 
-          // Redirection après 1 seconde
-          setTimeout(() => {
-            window.location.href = "index.html";
-          }, 1000);
-        } else {
-          resultEl.textContent = data.error || "Erreur lors du vote.";
-          resultEl.classList.remove("text-green-500");
-          resultEl.classList.add("text-red-500");
-        }
-      } catch (err) {
-        loader.classList.add("hidden");
-        btnText.textContent = "Vérifier et Voter";
-        resultEl.textContent = "Erreur de connexion au serveur.";
+      if (data.success) {
+        resultEl.textContent = data.message;
+        resultEl.classList.remove("text-red-500");
+        resultEl.classList.add("text-green-500");
+
+        // Redirection après 1 seconde
+        setTimeout(() => {
+          window.location.href = "index.html";
+        }, 1000);
+      } else {
+        resultEl.textContent = data.error || "Erreur lors du vote.";
         resultEl.classList.remove("text-green-500");
         resultEl.classList.add("text-red-500");
       }
-    });
-  </script>
+    } catch (err) {
+      loader.classList.add("hidden");
+      btnText.textContent = "Vérifier et Voter";
+      resultEl.textContent = "Erreur de connexion au serveur.";
+      resultEl.classList.remove("text-green-500");
+      resultEl.classList.add("text-red-500");
+    }
+  });
+</script>
+
 </body>
 </html>
+
 
 
 
