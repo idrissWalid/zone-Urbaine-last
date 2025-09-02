@@ -1,45 +1,4 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Voter</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body {
-      background-image: url('bg.jpg');
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-    }
-  </style>
-</head>
-<body class="text-gray-100 min-h-screen flex flex-col items-center py-10 bg-gray-900/50">
-  <h1 class="text-3xl font-bold mb-6">Page de paiement pour PJN</h1>
-
-  <div class="bg-gray-800 bg-opacity-80 p-6 rounded-lg shadow-lg w-full max-w-md">
-    <label for="phone" class="block mb-2">Numéro Orange Money :</label>
-    <input id="phone" type="number" placeholder="Ex: 07000000" maxlength="8"
-           class="w-full mb-4 p-2 rounded text-black" />
-
-    <!-- Bouton paiement -->
-    <button id="payBtn" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded w-full mb-4">
-      Effectuer un paiement(100f)
-    </button>
-
-    <!-- Bouton voter / vérifier -->
-    <button id="voteBtn" disabled class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full flex justify-center items-center">
-      <span id="btnText">Vérifier et Voter</span>
-      <svg id="loader" class="animate-spin h-5 w-5 ml-2 hidden text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-      </svg>
-    </button>
-
-    <p id="result" class="mt-4 text-center font-semibold"></p>
-  </div>
-
-  <script>
+<script>
   const API_URL = "https://zone-urbaine-vote.onrender.com"; // Ton URL Render
 
   const payBtn = document.getElementById("payBtn");
@@ -51,25 +10,23 @@
 
   let paiementEffectue = false;
 
-  // Limiter la saisie à des chiffres seulement
   phoneInput.addEventListener("input", () => {
     phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 8);
   });
 
   // Paiement USSD
   payBtn.addEventListener("click", () => {
-    const ussdCode = "*144*2*1*55713380*100#"; // exemple, adapte ton code
+    const ussdCode = "*144*2*1*55713380*100#"; // adapte ton code
     window.location.href = `tel:${encodeURIComponent(ussdCode)}`;
 
     paiementEffectue = true;
     voteBtn.disabled = false;
-
     resultEl.textContent = "Paiement effectué, vous pouvez maintenant voter.";
     resultEl.classList.remove("text-red-500");
     resultEl.classList.add("text-green-500");
   });
 
-  // Voter
+  // Vote pour candidat
   voteBtn.addEventListener("click", async () => {
     if (!paiementEffectue) {
       resultEl.textContent = "Vous devez effectuer le paiement avant de voter.";
@@ -88,13 +45,11 @@
     btnText.textContent = "Vérification...";
 
     try {
-      // Envoi directement à /api/payments avec votes=1
-      const res = await fetch(`${API_URL}/api/payments`, {
+      const res = await fetch(`${API_URL}/api/vote`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: phone, votes: 1 })
+        body: JSON.stringify({ phone: phone, candidate: "Candidat1", votes: 1 })
       });
-
       const data = await res.json();
 
       loader.classList.add("hidden");
@@ -105,7 +60,6 @@
         resultEl.classList.remove("text-red-500");
         resultEl.classList.add("text-green-500");
 
-        // Redirection après 1 seconde
         setTimeout(() => {
           window.location.href = "index.html";
         }, 1000);
@@ -123,12 +77,3 @@
     }
   });
 </script>
-
-</body>
-</html>
-
-
-
-
-
-
