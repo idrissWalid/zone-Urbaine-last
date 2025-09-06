@@ -96,7 +96,7 @@
         <!-- Mobile Menu -->
         <div id="mobile-menu" class="hidden md:hidden px-6 pb-4">
             <a href="#accueil" class="block py-2 text-center hover:bg-gray-700 rounded">Accueil</a>
-            <a href="#direct" class="block py-2 text-center hover:bg-gray-700 rounded">En Direct</a>
+            <a href="#direct" class="block py-2 text-center hover:bg-gray-700 rounded">Resultats en Direct</a>
             <a href="#rediffusions" class="block py-2 text-center hover:bg-gray-700 rounded">Rediffusions</a>
             <a href="#vote" class="block py-2 text-center hover:bg-gray-700 rounded">Voter</a>
             <a href="#contact" class="block py-2 text-center hover:bg-gray-700 rounded">Contact</a>
@@ -113,15 +113,7 @@
             </div>
         </section>
 
-        <!-- About Section -->
-        <section id="about" class="py-20 bg-gray-900">
-            <div class="container mx-auto px-6 text-center scroll-animate">
-                <h2 class="text-4xl font-bold mb-4">À propos de <span class="gradient-text">Big Boss</span></h2>
-                <p class="max-w-3xl mx-auto text-lg text-gray-400">
-                    Fondé en 2021 avec Alvin SOUKROUMDE, Big Boss s'est imposé comme un acteur majeur de l'événementiel. Après le succès de la "Fête des Saucisses" et les trois éditions mémorables de "Last Last", nous lançons une nouvelle expérience : Zone Urbaine. Notre mission est de créer des moments inoubliables et de promouvoir la culture.
-                </p>
-            </div>
-        </section>
+
         <section id="details" class="py-20 bg-gray-900">
             <div class="container mx-auto px-6 flex flex-col md:flex-row items-center gap-12 scroll-animate">
                 <!-- Affiche à gauche -->
@@ -140,18 +132,37 @@
             </div>
         </section>
         <!-- Live Section -->
-        <section id="direct" class="py-20 bg-gray-800">
-            <div class="container mx-auto px-6 scroll-animate">
-                <h2 class="text-4xl font-bold text-center mb-10">Regardez la compétition <span class="gradient-text">En Direct</span></h2>
-                <div class="max-w-4xl mx-auto bg-black rounded-lg shadow-2xl overflow-hidden">
-                    <div class="video-responsive">
-                        <!-- REMARQUE: Remplacez le lien ci-dessous par le lien 'embed' de votre direct YouTube. -->
-                        <!-- Exemple: https://www.youtube.com/embed/LIVE_VIDEO_ID -->
-                        <iframe src="https://www.youtube.com/embed/jfKfPfyJRdk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                    </div>
-                </div>
-            </div>
-        </section>
+<!-- Live Section (remplacée par le graphique) -->
+<!-- Live Section (remplacée par le graphique) -->
+<section id="direct" class="py-20 bg-gray-800">
+    <div class="container mx-auto px-6 scroll-animate">
+        <h2 class="text-4xl font-bold text-center mb-10">
+            Resultats des <span class="gradient-text">Votes en Direct</span>
+        </h2>
+
+        <!-- Graphique -->
+        <div class="max-w-4xl mx-auto bg-gray-900 p-6 rounded-lg shadow-lg">
+            <canvas id="voteChart"></canvas>
+        </div>
+
+        <!-- Stats -->
+        <div class="text-center mt-6 space-y-2">
+            <p style="visibility: hidden;" >Total Votes : <span id="total-votes">0</span></p>
+            <p id="cand1">PGN : 0 votes (0%)</p>
+            <p id="cand2">IKSS : 0 votes (0%)</p>
+            <p id="cand3">Bremzo : 0 votes (0%)</p>
+            <p id="cand4">RCD : 0 votes (0%)</p>
+            <p id="cand5">MeddyBest : 0 votes (0%)</p>
+        </div>
+
+        <!-- Bouton -->
+        <div class="my-6 flex justify-center">
+            <button id="refreshBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Actualiser
+            </button>
+        </div>
+    </div>
+</section>
         
         <!-- Replays Section -->
         <section id="rediffusions" class="py-20 bg-gray-900">
@@ -262,6 +273,17 @@
                 </div>
             </div>
         </section>
+
+
+                <!-- About Section -->
+        <section id="about" class="py-20 bg-gray-900">
+            <div class="container mx-auto px-6 text-center scroll-animate">
+                <h2 class="text-4xl font-bold mb-4">À propos de <span class="gradient-text">Big Boss</span></h2>
+                <p class="max-w-3xl mx-auto text-lg text-gray-400">
+                    Fondé en 2021 avec Alvin SOUKROUMDE, Big Boss s'est imposé comme un acteur majeur de l'événementiel. Après le succès de la "Fête des Saucisses" et les trois éditions mémorables de "Last Last", nous lançons une nouvelle expérience : Zone Urbaine. Notre mission est de créer des moments inoubliables et de promouvoir la culture.
+                </p>
+            </div>
+        </section>
         
         <!-- Contact Section -->
         <section id="contact" class="py-20 bg-gray-900">
@@ -307,6 +329,80 @@
             <p class="text-xs text-gray-500 mt-4">Ces cookies sont stockés sur votre navigateur. Ils nous aident à nous souvenir de vos préférences, comme l'acceptation de notre politique de cookies.</p>
         </div>
     </div>
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let voteChart;
+
+    async function fetchVotes() {
+        const res = await fetch('https://zone-urbaine-vote.onrender.com/api/admin/votes'); 
+        return res.json();
+    }
+
+    async function updateChart() {
+        const data = await fetchVotes();
+        if (!data.success) {
+            alert("Impossible de récupérer les votes.");
+            return;
+        }
+        const votes = data.votes;
+        const chartData = [
+            votes.Candidat1 || 0,
+            votes.Candidat2 || 0,
+            votes.Candidat3 || 0,
+            votes.Candidat4 || 0,
+            votes.Candidat5 || 0
+        ];
+
+        if (!voteChart) {
+            const ctx = document.getElementById('voteChart').getContext('2d');
+            voteChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['PGN', 'IKSS', 'Bremzo', 'RCD', 'MeddyBest'],
+                    datasets: [{
+                        label: 'Nombre de votes',
+                        data: chartData,
+                        backgroundColor: ['#FBBF24','#EF4444','#FFFFFF','#22C55E','#8B5CF6'],
+                        borderColor: '#222',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { color: '#fff' }},
+                        x: { ticks: { color: '#fff' }}
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#fff' } }
+                    }
+                }
+            });
+        } else {
+            voteChart.data.datasets[0].data = chartData;
+            voteChart.update();
+        }
+
+        // Mettre à jour les stats
+        const totalVotes = chartData.reduce((a, b) => a + b, 0);
+        document.getElementById('total-votes').innerText = totalVotes;
+        document.getElementById('cand1').innerText = `PGN : ${totalVotes ? ((votes.Candidat1 || 0)/totalVotes*100).toFixed(2):0}%`;
+        document.getElementById('cand2').innerText = `IKSS : ${totalVotes ? ((votes.Candidat2 || 0)/totalVotes*100).toFixed(2):0}%`;
+        document.getElementById('cand3').innerText = `Bremzo : ${totalVotes ? ((votes.Candidat3 || 0)/totalVotes*100).toFixed(2):0}%`;
+        document.getElementById('cand4').innerText = `RCD : ${totalVotes ? ((votes.Candidat4 || 0)/totalVotes*100).toFixed(2):0}%`;
+        document.getElementById('cand5').innerText = `MeddyBest : ${totalVotes ? ((votes.Candidat5 || 0)/totalVotes*100).toFixed(2):0}%`;
+    }
+
+    document.getElementById('refreshBtn').onclick = updateChart;
+
+    window.onload = updateChart;
+</script>
+
+
+
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
