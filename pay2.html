@@ -38,6 +38,18 @@
 
     <p id="result" class="mt-4 text-center font-semibold"></p>
   </div>
+  <div class="fixed bottom-4 w-full flex flex-col items-center gap-2">
+  <span class="text-gray-100 font-semibold text-center">
+    Contactez-nous si vous voulez des votes en masse
+  </span>
+  <a href="https://wa.me/22653181087" target="_blank"
+     class="flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-full">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 0C5.373 0 0 5.372 0 12c0 2.132.557 4.128 1.528 5.873L0 24l6.24-1.65C8.852 23.444 10.4 24 12 24c6.627 0 12-5.372 12-12S18.627 0 12 0zm5.388 17.612l-1.375 4.004-4.103-1.103a9.953 9.953 0 01-5.544-5.542l-1.103-4.103 4.004-1.375a.502.502 0 01.535.146l3.074 3.075a.5.5 0 01-.027.715l-1.451 1.451a.5.5 0 00-.103.536l.814 2.071a.5.5 0 00.446.308h.001l2.071-.814a.5.5 0 00.536-.103l1.451-1.451a.5.5 0 01.716-.027l3.075 3.074a.5.5 0 01.146.534z"/>
+    </svg>
+  </a>
+</div>
+
 
   <script>
     const API_URL = "https://zone-urbaine-vote.onrender.com"; // Remplace par ton URL Render
@@ -105,7 +117,7 @@
           // Redirection après 1 seconde
           setTimeout(() => {
             window.location.href = "index.html";
-          }, 1000);
+          }, 10000);
         } else {
           resultEl.textContent = data.error || "Erreur lors du vote.";
           resultEl.classList.remove("text-green-500");
@@ -122,6 +134,8 @@
   </script>
 </body>
 </html>
+
+
 
 
 
