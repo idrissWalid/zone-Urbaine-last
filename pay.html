@@ -15,7 +15,7 @@
   </style>
 </head>
 <body class="text-gray-100 min-h-screen flex flex-col items-center py-10 bg-gray-900/50">
-  <h1 class="text-3xl font-bold mb-6">Page de paiement pour PJN</h1>
+  <h1 class="text-3xl font-bold mb-6">Page de paiement pour PGN</h1>
 
   <div class="bg-gray-800 bg-opacity-80 p-6 rounded-lg shadow-lg w-full max-w-md">
     <label for="phone" class="block mb-2">Numéro Orange Money :</label>
@@ -24,7 +24,7 @@
 
     <!-- Bouton paiement -->
     <button id="payBtn" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded w-full mb-4">
-      Effectuer un paiement (100f)
+      Effectuer un paiement(100f)
     </button>
 
     <!-- Bouton voter / vérifier -->
@@ -38,6 +38,18 @@
 
     <p id="result" class="mt-4 text-center font-semibold"></p>
   </div>
+  <div class="fixed bottom-4 w-full flex flex-col items-center gap-2">
+  <span class="text-gray-100 font-semibold text-center">
+    Contactez-nous si vous voulez des votes en masse
+  </span>
+  <a href="https://wa.me/22653181087" target="_blank"
+     class="flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-full">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 0C5.373 0 0 5.372 0 12c0 2.132.557 4.128 1.528 5.873L0 24l6.24-1.65C8.852 23.444 10.4 24 12 24c6.627 0 12-5.372 12-12S18.627 0 12 0zm5.388 17.612l-1.375 4.004-4.103-1.103a9.953 9.953 0 01-5.544-5.542l-1.103-4.103 4.004-1.375a.502.502 0 01.535.146l3.074 3.075a.5.5 0 01-.027.715l-1.451 1.451a.5.5 0 00-.103.536l.814 2.071a.5.5 0 00.446.308h.001l2.071-.814a.5.5 0 00.536-.103l1.451-1.451a.5.5 0 01.716-.027l3.075 3.074a.5.5 0 01.146.534z"/>
+    </svg>
+  </a>
+</div>
+
 
   <script>
     const API_URL = "https://zone-urbaine-vote.onrender.com"; // Remplace par ton URL Render
@@ -58,7 +70,7 @@
 
     // Paiement USSD
     payBtn.addEventListener("click", () => {
-      const ussdCode = "*144*2*1*55713380*100#"; // adapte ton code
+      const ussdCode = "*144*2*1*55713380*100#";
       window.location.href = `tel:${encodeURIComponent(ussdCode)}`;
 
       paiementEffectue = true;
@@ -69,7 +81,6 @@
       resultEl.classList.add("text-green-500");
     });
 
-    // Voter pour un candidat spécifique
     voteBtn.addEventListener("click", async () => {
       if (!paiementEffectue) {
         resultEl.textContent = "Vous devez effectuer le paiement avant de voter.";
@@ -91,9 +102,8 @@
         const res = await fetch(`${API_URL}/api/vote`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: phone, candidate: "Candidat1", votes: 1 })
+          body: JSON.stringify({ phone, candidate: "Candidat1" })
         });
-
         const data = await res.json();
 
         loader.classList.add("hidden");
@@ -107,7 +117,7 @@
           // Redirection après 1 seconde
           setTimeout(() => {
             window.location.href = "index.html";
-          }, 1000);
+          }, 10000);
         } else {
           resultEl.textContent = data.error || "Erreur lors du vote.";
           resultEl.classList.remove("text-green-500");
@@ -124,3 +134,12 @@
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
